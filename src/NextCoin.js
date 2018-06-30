@@ -1,4 +1,5 @@
 import React, {Component} from 'react'
+import swal from 'sweetalert';
 var firebase = require('firebase');
 
 var config = {
@@ -62,6 +63,7 @@ class Login extends Component {
     }
     return(
       <div>
+        <br/>
         <button id="Login" onClick={this.login}>Sign In with Nixor Email And Password</button>
         <h3 id="err">{this.state.err}</h3>
         {abc}
@@ -130,6 +132,7 @@ class Getinfo extends Component {
 }
 
 class Main extends Component {
+
   componentWillMount(){
     firebase.database().ref('NextCoin/').on('value', (snapshot) => {
       this.setState({msg: snapshot.val().value});
@@ -160,7 +163,7 @@ class Main extends Component {
               if (nextcoin) {
                 nextcoin.value = nextcoin.value + this.state.factor;
                 nextcoin.nesProfit = nextcoin.nesProfit + (0.5 * nextcoin.value)
-                this.state.newPrice = nextcoin;
+                this.setState({newPrice: nextcoin});
                 oldPrice = (nextcoin.value - this.state.factor) * 1.5;
               }
               return nextcoin;
@@ -199,7 +202,7 @@ class Main extends Component {
               firebase.database().ref("NextCoin/").transaction((nextcoin) => {
                 if (nextcoin) {
                   nextcoin.value = nextcoin.value - this.state.factor;
-                  this.state.newPrice = nextcoin;
+                  this.setState({newPrice: nextcoin});
                   oldPrice = (nextcoin.value + this.state.factor) * 1.5;
                 }
                 return nextcoin;
@@ -225,6 +228,62 @@ class Main extends Component {
     };
   }
 
+  transactions(){
+    var dataB = [];
+    var dataS = [];
+    swal({
+      title: "Transactions",
+      buttons: {
+        a: {
+          text: "Buyings",
+          value: "buy"
+        },
+        b: {
+          text: "Sellings",
+          value: "sell"
+        },
+      }
+    }).then((value) => {
+      firebase.database().ref('Users/' + this.props.uid + 'transactions/').once('value').then( (snapshots) => {
+        var keys = Object.keys(snapshots.val());
+        var snap = snapshots.val()
+        var j = 0;
+        var k = 0
+
+        for(var i = 0; i< keys.length; i++){
+          if(snap[keys[i]].buy !== undefined){
+            //console.log(snap[keys[i]].buy)
+            dataB[j] = snap[keys[i]].buy;
+            j++;
+          }
+          if(snap[keys[i]].sell !== undefined){
+            //console.log(snap[keys[i]].sell)
+            dataS[k] = snap[keys[k]].sell;
+            k++;
+          }
+        }
+        if(value = "buy"){
+          var x = "";
+          for(var i = 0; i<dataB.length; i++){
+            x = x + (i+1) + ") " + dataB[i].toString() + "\n";
+          }
+          swal("Buyings" , x);
+        } else if (value = "sell") {
+          var y = "";
+          for(var i = 0; i<dataB.length; i++){
+            y = y + (i+1) + ") " + dataB[i].toString() + "\n";
+          }
+          swal("Sellings" , y);
+        }
+    })
+  })
+
+
+
+
+
+  }
+
   constructor(props){
     super(props);
 
@@ -239,29 +298,23 @@ class Main extends Component {
       nesProfit: 0,
       showButtons_1: false,
       showButtons_2: false,
-      newPrice: 0
+      newPrice: 0,
+      eg: ''
     };
     this.buy = this.buy.bind(this);
     this.sell = this.sell.bind(this);
+    this.transactions = this.transactions.bind(this);
   }
   render(){
     //console.log(this.props.info);
-    var eg;
     if(this.state.showButtons_1 && this.state.showButtons_2){
       var buttons = <div>
         <button id="buy" onClick={this.buy} >Buy Coin</button>
-        <button id="sell" onClick={this.sell} >Sell Coin</button>
+        <button id="sell" onClick={this.sell} >Sell Coin</button> <br/>
+        <button id="transactions" onClick={this.transactions} >View your transactions</button>
       </div>
     };
-    // firebase.database().ref('Users/' + this.props.uid + 'transactions/').on('value', (snapshots) => {
-      // var keys = Object.keys(snapshots.val());
-      // console.log(keys);
-      // var data = [];
-      // for(var i = 0; i< keys.length(); i++){
-      //   data = snapshots[keys[i]].buy;
-      //   console.log(snapshots[keys[i]].buy);
-      // }
-    // });
+
     return(
       <div>
         <h1>Buying Price:  {this.state.buyPrice}</h1>
@@ -272,7 +325,6 @@ class Main extends Component {
         <h3>{this.state.newMsg}</h3>
         <h4>NES Cuts off 50% as fees whenever a coin is bought</h4>
         {buttons}
-        {eg}
       </div>
     )};
 }

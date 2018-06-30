@@ -209,10 +209,10 @@ class Main extends Component {
                   name: this.props.info.name,
                   email: this.props.info.email,
                   coins: this.state.coins - 1,
-                  balance: this.state.balance + oldPrice
+                  balance: (this.state.balance + this.state.newPrice.value + this.state.factor)
                 }
                 firebase.database().ref().update(updates).then((z) => {
-                      this.setState({newMsg: "Coin was successfully bought for " +  oldPrice});
+                      this.setState({newMsg: "Coin was successfully sold for " +  (this.state.newPrice.value + this.state.factor)});
                       firebase.database().ref('Users/' + this.props.uid + 'transactions/').push().set({
                         sell: oldPrice
                       });
@@ -264,14 +264,13 @@ class Main extends Component {
     // });
     return(
       <div>
-        <h1>{this.state.msg}</h1>
-        <h3>Name : {this.props.info.name} </h3>
-        <h3>email : {this.props.info.email} </h3>
-        <h3>balance : {this.state.balance} </h3>
-        <h3>coins : {this.state.coins} </h3>
+        <h1>Buying Price:  {this.state.buyPrice}</h1>
+        <h1>Selling Price: {this.state.msg}</h1>
+        <h3>Name: {this.props.info.name} </h3>
+        <h3>balance: {this.state.balance} </h3>
+        <h3>coins: {this.state.coins} </h3>
         <h3>{this.state.newMsg}</h3>
-        <h3>NES Cuts off 50% as fees whenever a coin is bought</h3>
-        <h2>You will buy the coin for : {this.state.buyPrice}</h2>
+        <h4>NES Cuts off 50% as fees whenever a coin is bought</h4>
         {buttons}
         {eg}
       </div>

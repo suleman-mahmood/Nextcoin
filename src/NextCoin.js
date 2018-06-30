@@ -35,10 +35,6 @@ class Login extends Component {
       this.setState({name: userz.user.displayName})
       this.setState({email: userz.user.email})
       this.setState({isLogin: true});
-      // firebase.database().ref('NextCoin/').set({
-      //   value: 50,
-      //   nesProfit: 1
-      // })
     })
     .catch((e) => {
       this.setState({err: e.message});
@@ -62,11 +58,12 @@ class Login extends Component {
   render(){
     if (this.state.isLogin){
     var abc = <Getinfo uid={this.state.uid} name={this.state.name} email={this.state.email}/>;
+    document.getElementById("err").classList.add('hide');
     }
     return(
       <div>
         <button id="Login" onClick={this.login}>Sign In with Nixor Email And Password</button>
-        <h3>{this.state.err}</h3>
+        <h3 id="err">{this.state.err}</h3>
         {abc}
       </div>
     );
@@ -134,7 +131,6 @@ class Getinfo extends Component {
 
 class Main extends Component {
   componentWillMount(){
-    // setInterval(this.getCoinPrice, 1000);
     firebase.database().ref('NextCoin/').on('value', (snapshot) => {
       this.setState({msg: snapshot.val().value});
       this.setState({coinprice: snapshot.val().value});
@@ -153,46 +149,38 @@ class Main extends Component {
 
   buy(){
     if(this.state.balance >= this.state.buyPrice){
-      var ask = window.confirm("Do you want to buy the coin for : "  + this.state.buyPrice);
-      if(ask) {
+
+      if(window.confirm("Do you want to buy the coin for : "  + this.state.buyPrice)) {
         document.getElementById("buy").classList.add("hide");
         document.getElementById("sell").classList.add("hide");
-        setTimeout(() => {
-          var coins = this.state.coins + 1;
-          var oldPrice = 0;
-          var balance = this.state.balance - this.state.buyPrice;
-          var transRef = firebase.database().ref('Users/' + this.props.uid + 'transactions/').push()
 
-          transRef.set({
-            buy: this.state.buyPrice
-          }).then((x) => {
-            oldPrice = this.state.buyPrice;
-            // firebase.database().ref("NextCoin/").set({
-            //   nesProfit: this.state.nesProfit + (this.state.buyPrice - this.state.coinprice),
-            //   value: this.state.coinprice + this.state.factor
+        setTimeout(() => {
+          var oldPrice = 0;
             firebase.database().ref("NextCoin/").transaction((nextcoin) => {
               if (nextcoin) {
                 nextcoin.value = nextcoin.value + this.state.factor;
                 nextcoin.nesProfit = nextcoin.nesProfit + (0.5 * nextcoin.value)
+                this.state.newPrice = nextcoin;
+                oldPrice = (nextcoin.value - this.state.factor) * 1.5;
               }
               return nextcoin;
-              // nesProfit: this.state.nesProfit + (this.state.buyPrice - this.state.coinprice),
-              // value: this.state.coinprice + this.state.factor
             }).then((y) => {
               var updates = {};
               updates['Users/' + this.props.uid] = {
                 name: this.props.info.name,
                 email: this.props.info.email,
-                coins: coins,
-                balance: balance
+                coins: this.state.coins + 1,
+                balance: this.state.balance - oldPrice
               }
               firebase.database().ref().update(updates).then((z) => {
                     this.setState({newMsg: "Coin was successfully bought for " +  oldPrice});
+                    firebase.database().ref('Users/' + this.props.uid + 'transactions/').push().set({
+                      buy: oldPrice
+                    });
                     document.getElementById("buy").classList.remove("hide");
                     document.getElementById("sell").classList.remove("hide");
                 });
               });
-            });
           }, 1000);
       }
 
@@ -201,39 +189,38 @@ class Main extends Component {
 
   sell(){
     if(this.state.coins !== 0){
-      var ask = window.confirm("Do you want to sell the coin for : "  + this.state.coinprice);
-      if(ask) {
+
+      if(window.confirm("Do you want to sell the coin for : "  + this.state.coinprice)) {
           document.getElementById("buy").classList.add("hide");
           document.getElementById("sell").classList.add("hide");
-          setTimeout(() => {
-            var coins = this.state.coins - 1;
-            var oldPrice = 0;
-            var balance = this.state.balance + this.state.coinprice;
 
-            var transRef = firebase.database().ref('Users/' + this.props.uid + 'transactions/').push()
-            transRef.set({
-              sell: this.state.coinprice
-            }).then((x) => {
-              oldPrice = this.state.coinprice;
-              firebase.database().ref("NextCoin/").set({
-                nesProfit: this.state.nesProfit,
-                value: this.state.coinprice - this.state.factor
+          setTimeout(() => {
+            var oldPrice = 0;
+              firebase.database().ref("NextCoin/").transaction((nextcoin) => {
+                if (nextcoin) {
+                  nextcoin.value = nextcoin.value - this.state.factor;
+                  this.state.newPrice = nextcoin;
+                  oldPrice = (nextcoin.value + this.state.factor) * 1.5;
+                }
+                return nextcoin;
               }).then((y) => {
                 var updates = {};
                 updates['Users/' + this.props.uid] = {
                   name: this.props.info.name,
                   email: this.props.info.email,
-                  coins: coins,
-                  balance: balance
+                  coins: this.state.coins - 1,
+                  balance: this.state.balance + oldPrice
                 }
                 firebase.database().ref().update(updates).then((z) => {
-                  this.setState({newMsg: "Coin was successfully sold for " +  oldPrice});
-                  document.getElementById("buy").classList.remove("hide");
-                  document.getElementById("sell").classList.remove("hide");
+                      this.setState({newMsg: "Coin was successfully bought for " +  oldPrice});
+                      firebase.database().ref('Users/' + this.props.uid + 'transactions/').push().set({
+                        sell: oldPrice
+                      });
+                      document.getElementById("buy").classList.remove("hide");
+                      document.getElementById("sell").classList.remove("hide");
+                  });
                 });
-              });
-            });
-          }, 1000);
+            }, 1000);
   };
     };
   }
@@ -251,7 +238,8 @@ class Main extends Component {
       buyPrice: 0,
       nesProfit: 0,
       showButtons_1: false,
-      showButtons_2: false
+      showButtons_2: false,
+      newPrice: 0
     };
     this.buy = this.buy.bind(this);
     this.sell = this.sell.bind(this);
@@ -265,15 +253,15 @@ class Main extends Component {
         <button id="sell" onClick={this.sell} >Sell Coin</button>
       </div>
     };
-    firebase.database().ref('Users/' + this.props.uid + 'transactions/').on('value', (snapshots) => {
-      var keys = Object.keys(snapshots.val());
-      console.log(keys);
+    // firebase.database().ref('Users/' + this.props.uid + 'transactions/').on('value', (snapshots) => {
+      // var keys = Object.keys(snapshots.val());
+      // console.log(keys);
       // var data = [];
       // for(var i = 0; i< keys.length(); i++){
       //   data = snapshots[keys[i]].buy;
       //   console.log(snapshots[keys[i]].buy);
       // }
-    });
+    // });
     return(
       <div>
         <h1>{this.state.msg}</h1>

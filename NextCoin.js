@@ -3,12 +3,12 @@ import swal from 'sweetalert';
 var firebase = require('firebase');
 
 var config = {
-    apiKey: "AIzaSyD98vW_oCaW8tPCp0xteLgpZeOWQeX5XCc",
-    authDomain: "nextcoin-123.firebaseapp.com",
-    databaseURL: "https://nextcoin-123.firebaseio.com",
+    apiKey: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    authDomain: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    databaseURL: "xxxxxxxxxxxxxxxxxxxxxxxx",
     projectId: "nextcoin-123",
-    storageBucket: "nextcoin-123.appspot.com",
-    messagingSenderId: "521264532325"
+    storageBucket: "xxxxxxxxxxxxxxxxxxxxxxx",
+    messagingSenderId: "xxxxxxxxxxxxxxxxxx"
   };
   firebase.initializeApp(config);
 
